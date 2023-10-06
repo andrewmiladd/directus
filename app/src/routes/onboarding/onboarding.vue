@@ -1,60 +1,3 @@
-<template>
-	<public-view :wide="true">
-		<div class="container">
-			<!-- Top Navbar -->
-			<div class="nav">
-				<v-progress-linear :value="progressPercent" rounded :indeterminate="isLoading"></v-progress-linear>
-			</div>
-
-			<!-- Content -->
-			<div class="onboarding-slides">
-				<Transition name="dialog" mode="out-in">
-					<div class="slide" :key="currentSlideName">
-						<div class="intro-text">
-							<h1 class="type-title">{{ t(currentSlide?.i18nTitle) }}</h1>
-							<p class="type-text">{{ t(currentSlide?.i18nText) }}</p>
-						</div>
-						<v-form
-							v-if="currentSlide?.form"
-							v-model="currentSlide.form.model"
-							:fields="currentSlide.form.fields"
-							:autofocus="true"
-						/>
-					</div>
-				</Transition>
-			</div>
-
-			<!-- Actions -->
-			<div class="actions">
-				<!-- Left Actions -->
-				<div>
-					<Transition name="dialog">
-						<v-button
-							v-if="!isLoading"
-							secondary
-							:disabled="isLoading || !currentSlide?.transitions.back"
-							@click="prevSlide"
-						>
-							{{ t('back') }}
-						</v-button>
-					</Transition>
-				</div>
-				<!-- Right Actions -->
-				<div>
-					<v-button @click="nextSlide" v-if="!isLoading" :disabled="isLoading">
-						{{ isLastSlide ? t('finish_setup') : t('next') }}
-					</v-button>
-				</div>
-			</div>
-			<Transition name="dialog">
-				<v-button v-if="!isLoading" secondary xSmall :disabled="isLoading" @click="skipOnboarding" class="btn-skip">
-					{{ t('onboarding.skip') }}
-				</v-button>
-			</Transition>
-		</div>
-	</public-view>
-</template>
-
 <script setup lang="ts">
 import api from '@/api';
 import { useServerStore } from '@/stores/server';
@@ -112,6 +55,7 @@ const projectModel = ref({
 	project_color: settingsStore.settings?.project_color,
 	project_use_case: settingsStore.settings?.onboarding?.project_use_case,
 });
+
 const userModel = ref({
 	id: userStore.currentUser?.id,
 	first_name: userStore.currentUser?.first_name,
@@ -122,6 +66,7 @@ const userModel = ref({
 });
 
 const showProjectSlide = Boolean(settingsStore.settings?.onboarding) === false;
+
 const slides: Ref<Record<string, OnboardingSlide>> = ref({
 	welcome: {
 		i18nTitle: 'onboarding.welcome.title',
@@ -146,6 +91,7 @@ const slides: Ref<Record<string, OnboardingSlide>> = ref({
 		},
 	},
 });
+
 if (showProjectSlide) {
 	slides.value.project = {
 		i18nTitle: 'onboarding.project.title',
@@ -214,11 +160,13 @@ function prevSlide() {
 	if (!currentSlide.value?.transitions.back) {
 		return;
 	}
+
 	currentSlideName.value = currentSlide.value?.transitions.back;
 }
 
 async function skipOnboarding() {
 	isLoading.value = true;
+
 	const userUpdate = api
 		.patch(`/users/${userModel.value.id}`, {
 			onboarding: '{}',
@@ -234,17 +182,77 @@ async function nextSlide() {
 	if (!currentSlide.value?.transitions.next) {
 		return;
 	}
+
 	if (isLastSlide.value) {
 		isLoading.value = true;
+
 		// TODO remove artificial slowdown for seeing how it'd look on a slower connection
 		setTimeout(() => {
 			// Set the loading to false can be useful in case there were routing errors
 			finishOnboarding().finally(() => (isLoading.value = false));
 		}, 750);
 	}
+
 	currentSlideName.value = currentSlide.value.transitions.next;
 }
 </script>
+
+<template>
+	<public-view :wide="true">
+		<div class="container">
+			<!-- Top Navbar -->
+			<div class="nav">
+				<v-progress-linear :value="progressPercent" rounded :indeterminate="isLoading"></v-progress-linear>
+			</div>
+
+			<!-- Content -->
+			<div class="onboarding-slides">
+				<Transition name="dialog" mode="out-in">
+					<div :key="currentSlideName" class="slide">
+						<div class="intro-text">
+							<h1 class="type-title">{{ t(currentSlide?.i18nTitle) }}</h1>
+							<p class="type-text">{{ t(currentSlide?.i18nText) }}</p>
+						</div>
+						<v-form
+							v-if="currentSlide?.form"
+							v-model="currentSlide.form.model"
+							:fields="currentSlide.form.fields"
+							:autofocus="true"
+						/>
+					</div>
+				</Transition>
+			</div>
+
+			<!-- Actions -->
+			<div class="actions">
+				<!-- Left Actions -->
+				<div>
+					<Transition name="dialog">
+						<v-button
+							v-if="!isLoading"
+							secondary
+							:disabled="isLoading || !currentSlide?.transitions.back"
+							@click="prevSlide"
+						>
+							{{ t('back') }}
+						</v-button>
+					</Transition>
+				</div>
+				<!-- Right Actions -->
+				<div>
+					<v-button v-if="!isLoading" :disabled="isLoading" @click="nextSlide">
+						{{ isLastSlide ? t('finish_setup') : t('next') }}
+					</v-button>
+				</div>
+			</div>
+			<Transition name="dialog">
+				<v-button v-if="!isLoading" secondary x-small :disabled="isLoading" class="btn-skip" @click="skipOnboarding">
+					{{ t('onboarding.skip') }}
+				</v-button>
+			</Transition>
+		</div>
+	</public-view>
+</template>
 
 <style scoped>
 .container {
