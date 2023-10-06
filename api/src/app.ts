@@ -48,7 +48,7 @@ import {
 import emitter from './emitter.js';
 import env from './env.js';
 import { InvalidPayloadError, ServiceUnavailableError } from './errors/index.js';
-import { getExtensionManager } from './extensions.js';
+import { getExtensionManager } from './extensions/index.js';
 import { getFlowManager } from './flows.js';
 import logger, { expressLogger } from './logger.js';
 import authenticate from './middleware/authenticate.js';
@@ -217,8 +217,8 @@ export default async function createApp(): Promise<express.Application> {
 
 		const htmlWithVars = html
 			.replace(/<base \/>/, `<base href="${adminUrl.toString({ rootRelative: true })}/" />`)
-			.replace(/<embed-head \/>/, embeds.head)
-			.replace(/<embed-body \/>/, embeds.body);
+			.replace('<!-- directus-embed-head -->', embeds.head)
+			.replace('<!-- directus-embed-body -->', embeds.body);
 
 		const sendHtml = (_req: Request, res: Response) => {
 			res.setHeader('Cache-Control', 'no-cache');
